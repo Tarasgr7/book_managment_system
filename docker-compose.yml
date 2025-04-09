@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+  postgres_db:
+    image: postgres:13
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: test_task
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  test_db:
+    image: postgres:13
+    container_name: test_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: test_task
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  fastapi:
+    build: .
+    container_name: fastapi_app
+    depends_on:
+      - postgres_db
+      - test_db
+    environment:
+      DB_HOST: postgres_db
+      DB_PORT: 5432
+      DB_NAME: test_task
+      DB_USER: postgres
+      DB_PASSWORD: admin
+      TEST_DB_HOST: test_db
+      TEST_DB_PORT: 5433
+      TEST_DB_NAME: test_task
+      TEST_DB_USER: postgres
+      TEST_DB_PASSWORD: admin
+    ports:
+      - "8000:8000"
+    restart: always
+    env_file:
+      - ./.env
+
+volumes:
+  postgres_data:
+  test_postgres_data:
