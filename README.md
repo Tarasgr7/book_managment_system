@@ -30,22 +30,13 @@
 
    This command will build the images for the containers (if needed) and start them. After this, you will be able to access the project through the browser or API.
 
-4. **Apply Database Migrations**:
-   If you are using Alembic for database migrations, apply them using the container:
-
-   ```bash
-   docker-compose exec web alembic upgrade head
-   ```
-
-   This will apply the latest migrations to the database. If you use a different tool for migrations, replace the command accordingly.
-
-5. **Accessing the Application**:
+4. **Accessing the Application**:
    After starting the project, you can access the following URLs (depending on your configuration):
 
    - Web API: `http://localhost:8000`
    - Swagger Documentation: `http://localhost:8000/docs`
 
-6. **Stopping the Project**:
+5. **Stopping the Project**:
    To stop the project, use the command:
 
    ```bash
