@@ -15,7 +15,7 @@
 
    ```bash
    git clone https://github.com/Tarasgr7/book_managment_system.git
-   cd <book_managment_system>
+   cd book_managment_system
    ```
 
 2. **Configure `.env` file**:
