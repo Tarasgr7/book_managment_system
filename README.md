@@ -18,7 +18,7 @@
    cd book_managment_system
    ```
 
-2. ** Configure `.env` file**  
+2. **Configure `.env` file**:  
 Create a `.env` file in the root directory and copy all content from `.env.example` into it.
 
 3. **Build and Start the Project**:
