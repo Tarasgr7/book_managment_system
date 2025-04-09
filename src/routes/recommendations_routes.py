@@ -13,9 +13,6 @@ from src.db.recommendations_queries import (
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 
 def format_author_field(book: dict) -> dict:
-    """
-    Formats the author field of a book, ensuring the author's name is a string.
-    """
     if isinstance(book.get("author"), dict):
         book["author"] = book["author"].get("name", "Unknown Author")
     return book
@@ -25,9 +22,6 @@ def format_author_field(book: dict) -> dict:
 async def recommend_books_by_genre_endpoint(
     user: user_dependency, genre: str, request: Request
 ):
-    """
-    Recommend books based on the user's genre preference.
-    """
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -54,9 +48,6 @@ async def recommend_books_by_author_endpoint(
     request: Request = None,
     author_name: str = Query(..., description="Author name to base recommendations on"),
 ):
-    """
-    Recommend books based on the user's interest in a particular author.
-    """
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,9 +69,6 @@ async def recommend_books_by_author_endpoint(
 async def recommend_books_history_endpoint(
     user: user_dependency, request: Request
 ):
-    """
-    Recommend books based on the user's reading history.
-    """
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

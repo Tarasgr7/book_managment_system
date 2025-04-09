@@ -6,7 +6,6 @@ def add_book_view(user_id: int, book_id: int):
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                # Check if a record already exists for this user and book
                 cursor.execute("""
                     SELECT 1 FROM user_history WHERE user_id = %s AND book_id = %s
                 """, (user_id, book_id))
@@ -14,9 +13,8 @@ def add_book_view(user_id: int, book_id: int):
 
                 if existing_view:
                     logger.info(f"User {user_id} has already viewed book {book_id}. No new record added.")
-                    return  # Exit if the record already exists
+                    return 
 
-                # Add a new record for the book view
                 cursor.execute("""
                     INSERT INTO user_history (user_id, book_id, action)
                     VALUES (%s, %s, 'viewed')
@@ -32,7 +30,6 @@ def recommend_books_by_genre(user_id: int, genre_input: str) -> List[Dict]:
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                # Check if the genre exists in the database
                 cur.execute("""
                     SELECT COUNT(*) FROM books
                     WHERE genre = %s
@@ -41,9 +38,8 @@ def recommend_books_by_genre(user_id: int, genre_input: str) -> List[Dict]:
                 genre_count = cur.fetchone()[0]
 
                 if genre_count == 0:
-                    return []  # Return empty if no books of that genre exist
+                    return [] 
 
-                # Recommend books of the specified genre that the user has not viewed
                 cur.execute("""
                     SELECT b.id, b.title, b.published_year, b.genre, b.author_id, a.name AS author_name
                     FROM books b
@@ -56,15 +52,15 @@ def recommend_books_by_genre(user_id: int, genre_input: str) -> List[Dict]:
                 """, (genre_input, user_id))
 
                 rows = cur.fetchall()
-                columns = [desc[0] for desc in cur.description]  # Extract column names
+                columns = [desc[0] for desc in cur.description]
                 result = []
                 for row in rows:
-                    book = dict(zip(columns, row))  # Create a dictionary for each book
+                    book = dict(zip(columns, row))
                     book["author"] = {
                         "id": book.pop("author_id"),
                         "name": book.pop("author_name")
                     }
-                    result.append(book)  # Add the book to the result list
+                    result.append(book)
                 return result
     except Exception as e:
         logger.error(f"Error recommending books by genre for user {user_id}, genre {genre_input}: {e}")
@@ -75,7 +71,6 @@ def recommend_books_by_author(user_id: int, author_name: str) -> List[Dict]:
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                # Find the author by name
                 cur.execute("""
                     SELECT id FROM authors
                     WHERE LOWER(name) = LOWER(%s)
@@ -83,10 +78,9 @@ def recommend_books_by_author(user_id: int, author_name: str) -> List[Dict]:
                 """, (author_name,))
                 author_row = cur.fetchone()
                 if not author_row:
-                    return []  # Return empty if the author is not found
+                    return []
                 author_id = author_row[0]
 
-                # Recommend books by the author that the user has not viewed
                 cur.execute("""
                     SELECT b.id, b.title, b.published_year, b.genre, b.author_id, a.name AS author_name
                     FROM books b

@@ -10,10 +10,13 @@ GENRES = {
 
 current_year = datetime.now().year
 
+genre_list = ', '.join(sorted(GENRES))
+genre_description = f"The genre of the book. Must be one of: {genre_list}."
+
 class BookBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=250, description="The title of the book.")
     published_year: int = Field(..., description="The year the book was published.")
-    genre: str = Field(..., description="The genre of the book. Must be one of the predefined genres.")
+    genre: str = Field(..., description=genre_description)
     author: str = Field(..., min_length=1, max_length=250, description="The name of the author.")
 
     @validator("published_year")

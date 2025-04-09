@@ -16,20 +16,12 @@ from src.db.author_queries import get_author_by_name, create_author
 from src.db.recommendations_queries import add_book_view
 from src.dependencies import logger
 
+
 router = APIRouter(prefix="/books", tags=["Books"])
 
 @router.get("/get_all_books", response_model=List[BookRead])
 @limiter.limit("5/minute")
 async def get_books_endpoint(request: Request, skip: int = 0, limit: int = 10, sort_by: str = "title"):
-    """
-    Retrieve all books from the database with pagination and sorting options.
-    
-    - **skip**: Number of books to skip (for pagination).
-    - **limit**: Number of books to return.
-    - **sort_by**: Field to sort the books by (default is 'title').
-
-    Returns a list of books, sorted and paginated.
-    """
     try:
         books = get_books(skip, limit, sort_by)
         logger.info(f"Retrieved {len(books)} books with skip={skip}, limit={limit}, sort_by={sort_by}")
@@ -41,13 +33,6 @@ async def get_books_endpoint(request: Request, skip: int = 0, limit: int = 10, s
 @router.get("/get_book/{book_id}", response_model=BookRead)
 @limiter.limit("5/minute")
 async def get_book_endpoint(book_id: int, user: user_dependency, request: Request):
-    """
-    Retrieve a single book by its ID and record the book view for the user.
-    
-    - **book_id**: The unique identifier of the book.
-
-    Returns the details of the book.
-    """
     try:
         book = get_book(book_id)
         add_book_view(user.get("id"), book_id)
@@ -60,16 +45,6 @@ async def get_book_endpoint(book_id: int, user: user_dependency, request: Reques
 @router.post("/create_book", status_code=status.HTTP_201_CREATED, response_model=BookRead)
 @limiter.limit("5/minute")
 async def create_book_endpoint(book: BookCreate, user: user_dependency, request: Request):
-    """
-    Create a new book in the database.
-    
-    - **title**: Title of the book.
-    - **published_year**: Year the book was published.
-    - **genre**: Genre of the book.
-    - **author**: Author of the book.
-
-    Returns the created book with its ID.
-    """
     if not user:
         logger.warning("Attempt to create book without authentication.")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
@@ -94,17 +69,6 @@ async def create_book_endpoint(book: BookCreate, user: user_dependency, request:
 @router.put("/update_book/{book_id}", response_model=BookRead)
 @limiter.limit("5/minute")
 async def update_book_endpoint(book_id: int, book: BookUpdate, user: user_dependency, request: Request):
-    """
-    Update an existing book in the database.
-    
-    - **book_id**: The ID of the book to update.
-    - **title**: New title (optional).
-    - **published_year**: New published year (optional).
-    - **genre**: New genre (optional).
-    - **author**: New author (optional).
-
-    Returns the updated book details.
-    """
     if not user:
         logger.warning("Attempt to update book without authentication.")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
@@ -157,13 +121,6 @@ async def update_book_endpoint(book_id: int, book: BookUpdate, user: user_depend
 @router.delete("/delete_book/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("5/minute")
 async def delete_book_endpoint(book_id: int, user: user_dependency, request: Request):
-    """
-    Delete a book from the database.
-    
-    - **book_id**: The ID of the book to delete.
-    
-    Returns a success message upon deletion.
-    """
     if not user:
         logger.warning("Attempt to delete book without authentication.")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
@@ -179,13 +136,6 @@ async def delete_book_endpoint(book_id: int, user: user_dependency, request: Req
 @router.post("/import", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 async def import_books(user: user_dependency, request: Request, file: UploadFile = File(...)):
-    """
-    Import books from a file (JSON or CSV format).
-    
-    - **file**: A file containing book data in either JSON or CSV format.
-    
-    Returns a summary of the import, including which books were successfully imported and which were skipped.
-    """
     if not user:
         logger.warning("Attempt to import books without authentication.")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
@@ -235,23 +185,10 @@ async def import_books(user: user_dependency, request: Request, file: UploadFile
         logger.error(f"Error importing books: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to import books: {str(e)}")
 
-from fastapi.responses import StreamingResponse
-import json
-import csv
-from io import StringIO
+
 
 @router.get("/export", status_code=status.HTTP_200_OK)
 async def export_books(format: str = "json", skip: int = 0, limit: int = 10, sort_by: str = "title"):
-    """
-    Export books data in JSON or CSV format.
-    
-    - **format**: The format to export the data in (either 'json' or 'csv').
-    - **skip**: Number of books to skip (for pagination).
-    - **limit**: Number of books to export.
-    - **sort_by**: Field to sort the books by (default is 'title').
-    
-    Returns the books data in the requested format.
-    """
     books = get_books(skip=skip, limit=limit, sort_by=sort_by)
 
     if format == "json":
