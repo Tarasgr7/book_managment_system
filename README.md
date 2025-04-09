@@ -18,8 +18,8 @@
    cd book_managment_system
    ```
 
-2. **Configure `.env` file**:
-   Make sure you have a `.env` file for settings such as database connection. If it doesn't exist, create a `.env` file in the root directory of the project, using the template provided in the repository.
+**2. Configure `.env` file**  
+Create a `.env` file in the root directory and copy all content from `.env.example` into it.
 
 3. **Build and Start the Project**:
    With Docker Compose, you can easily start all containers:
