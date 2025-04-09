@@ -2,7 +2,6 @@ from psycopg2.extras import RealDictCursor
 from src.db.connections import get_db_connection,logger
 
 def get_user_by_username(username: str):
-    """Fetch user details by username."""
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -14,7 +13,6 @@ def get_user_by_username(username: str):
         raise
 
 def create_user(username: str, hashed_password: str):
-    """Create a new user in the database."""
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:

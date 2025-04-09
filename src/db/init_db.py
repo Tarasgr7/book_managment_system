@@ -1,9 +1,9 @@
+import time
 from dotenv import load_dotenv
 from src.dependencies import logger
 from src.db.connections import get_db_connection
 load_dotenv()
 
-# SQL query to create necessary tables if they do not exist
 init_sql = """
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -44,33 +44,36 @@ def check_tables_exist(conn, table_names):
     WHERE table_schema = 'public'
     """
     with conn.cursor() as cur:
-        cur.execute(query)  # Execute query to get all table names
-        tables = {table[0] for table in cur.fetchall()}  # Fetch table names and store in a set
-    return tables.issuperset(table_names)  # Check if the set of required tables is a subset of existing tables
+        cur.execute(query)  
+        tables = {table[0] for table in cur.fetchall()}  
+    return tables.issuperset(table_names)
 
-def init_db():
-    """Initialize the database by creating necessary tables if they do not exist."""
-    try:
-        with get_db_connection() as conn:  # Use context manager for database connection
-            conn.autocommit = True  # Enable autocommit for DDL operations
-            logger.info("Connected to the database successfully.")
-            
-            required_tables = {'users', 'authors', 'books', 'user_history'}
-            
-            # Check if the required tables exist
-            if not check_tables_exist(conn, required_tables):
-                logger.warning("Some tables are missing. Creating tables...")
-                with conn.cursor() as cur:  # Use cursor to execute SQL
-                    try:
-                        logger.info("Executing init SQL to create tables...")
-                        cur.execute(init_sql)  # Execute SQL to create the tables
-                        logger.info("Tables created successfully.")
-                    except Exception as e:
-                        logger.error(f"Failed to create tables: {e}")
-                        raise  # Raise error if table creation fails
-            else:
-                logger.info("Tables already exist. No need to create.")
+def init_db(retries=5, delay=3):
+    for attempt in range(1, retries + 1):
+        try:
+            with get_db_connection() as conn:
+                conn.autocommit = True
+                logger.info("Connected to the database successfully.")
                 
-    except Exception as e:
-        # Log and raise an error if database initialization fails
-        logger.error(f"Failed to initialize database: {e}")
+                required_tables = {'users', 'authors', 'books', 'user_history'}
+                
+                if not check_tables_exist(conn, required_tables):
+                    logger.warning("Some tables are missing. Creating tables...")
+                    with conn.cursor() as cur:
+                        try:
+                            logger.info("Executing init SQL to create tables...")
+                            cur.execute(init_sql)
+                            logger.info("Tables created successfully.")
+                        except Exception as e:
+                            logger.error(f"Failed to create tables: {e}")
+                            raise
+                else:
+                    logger.info("Tables already exist. No need to create.")
+                break 
+        except Exception as e:
+            logger.error(f"Attempt {attempt} - Failed to initialize database: {e}")
+            if attempt < retries:
+                logger.info(f"Retrying in {delay} seconds...")
+                time.sleep(delay)
+            else:
+                logger.critical("Exceeded maximum number of retries. Exiting.")

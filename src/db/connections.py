@@ -4,7 +4,6 @@ from contextlib import contextmanager
 
 @contextmanager
 def get_db_connection(testing_status=False):
-    """Context manager for database connection to ensure automatic closing."""
     conn = None
     try:
         conn = psycopg2.connect(DATABASE_URL)
