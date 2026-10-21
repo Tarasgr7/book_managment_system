@@ -5,9 +5,9 @@ services:
     image: postgres:13
     container_name: postgres_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: test_task
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -17,9 +17,9 @@ services:
     image: postgres:13
     container_name: test_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: test_task
+      POSTGRES_USER: ${TEST_DB_USER}
+      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD}
+      POSTGRES_DB: ${TEST_DB_NAME}
     volumes:
       - test_postgres_data:/var/lib/postgresql/data
     ports:
@@ -34,14 +34,8 @@ services:
     environment:
       DB_HOST: postgres_db
       DB_PORT: 5432
-      DB_NAME: test_task
-      DB_USER: postgres
-      DB_PASSWORD: admin
       TEST_DB_HOST: test_db
-      TEST_DB_PORT: 5433
-      TEST_DB_NAME: test_task
-      TEST_DB_USER: postgres
-      TEST_DB_PASSWORD: admin
+      TEST_DB_PORT: 5432
     ports:
       - "8000:8000"
     restart: always
