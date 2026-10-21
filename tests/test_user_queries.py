@@ -8,7 +8,7 @@ def test_create_user(monkeypatch, test_db_conn):
     monkeypatch.setattr(user_queries, "get_db_connection", lambda: test_db_conn)
 
     username = "testuser"
-    password = "***REMOVED***"
+    password = "testpassword123"
 
     user_id = user_queries.create_user(username, password)
 
@@ -27,7 +27,7 @@ def test_get_user_by_username(monkeypatch, test_db_conn):
     monkeypatch.setattr(user_queries, "get_db_connection", lambda: test_db_conn)
 
     username = "anotheruser"
-    password = "***REMOVED***"
+    password = "testpassword123"
 
     # Створюємо користувача напряму
     with test_db_conn.cursor() as cursor:

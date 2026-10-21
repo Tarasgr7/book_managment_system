@@ -15,7 +15,7 @@ from fastapi import HTTPException
 
 # Тест для verify_password
 def test_verify_password():
-    plain_password = "***REMOVED***"
+    plain_password = "testpassword123"
     hashed_password = hash_password(plain_password)
     
     # Перевірка, що функція вірно порівнює пароль
@@ -25,7 +25,7 @@ def test_verify_password():
 
 # Тест для hash_password
 def test_hash_password():
-    password = "***REMOVED***"
+    password = "testpassword123"
     hashed_password = hash_password(password)
     
     # Перевірка, що хешування повертає строку
