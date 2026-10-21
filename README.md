@@ -1,50 +1,104 @@
+# Book Management API
 
----
+A REST API for managing a book catalogue, built with FastAPI and PostgreSQL. Users register and log in with JWT authentication, manage books and authors, bulk-import and export the catalogue as JSON or CSV, and get book recommendations based on genre, author, or their own viewing history. Database access uses raw SQL through psycopg2, and every endpoint except export is rate-limited with SlowAPI.
 
-# Project Setup
+## Features
 
-## Requirements
+- **Authentication** - registration and OAuth2 password-flow login that issues JWT bearer tokens; passwords hashed with bcrypt (passlib).
+- **Book CRUD** - create, read, update and delete books; authors are created automatically on first use.
+- **Validation** - Pydantic schemas enforce a fixed genre list, a published year between 1800 and the current year, and non-empty title/author.
+- **Pagination and sorting** - `skip` / `limit` plus sorting by `title`, `published_year` or `author_id`.
+- **Bulk import** - upload a `.json` or `.csv` file; books with duplicate titles are skipped and reported.
+- **Export** - download the catalogue as JSON or CSV.
+- **Recommendations** - unviewed books by genre, by author, or based on the top genres/authors in the user's view history (views are recorded when an authenticated user opens a book).
+- **Rate limiting** - 5 requests per minute per client IP on auth, CRUD, import and recommendation endpoints.
+- **Docker** - Dockerfile and Compose setup with the API, a main PostgreSQL database and a separate test database.
 
-- Docker
-- Docker Compose
+## Tech stack
 
-## Running the Project Locally
+Python 3.12, FastAPI, Uvicorn, PostgreSQL 13, psycopg2, Pydantic v2, python-jose (JWT), passlib/bcrypt, SlowAPI, pytest, Docker Compose.
 
-1. **Clone the Repository**:
-   Clone the repository using Git:
+## API overview
 
-   ```bash
-   git clone https://github.com/Tarasgr7/book_managment_system.git
-   cd book_managment_system
-   ```
+All routes are prefixed with `/api/v1`. Interactive docs are served by FastAPI at `http://localhost:8000/docs` (Swagger UI) and `/redoc`.
 
-2. **Configure .env file**:  
-Create a `.env` file in the root directory and copy all content from `.env.example` into it.
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/auth/register` | - | Register a user (JSON body: `username`, `password`) |
+| POST | `/auth/login` | - | OAuth2 form login, returns a bearer token |
+| GET | `/books/get_all_books` | - | List books (`skip`, `limit`, `sort_by`) |
+| GET | `/books/get_book/{book_id}` | JWT | Get a book and record the view |
+| POST | `/books/create_book` | JWT | Create a book |
+| PUT | `/books/update_book/{book_id}` | JWT | Partially update a book |
+| DELETE | `/books/delete_book/{book_id}` | JWT | Delete a book |
+| POST | `/books/import` | JWT | Import books from a JSON or CSV file |
+| GET | `/books/export` | - | Export books (`format=json` or `format=csv`) |
+| GET | `/recommendations/recommendations/genre` | JWT | Recommendations by `genre` |
+| GET | `/recommendations/recommendations/author` | JWT | Recommendations by `author_name` |
+| GET | `/recommendations/recommendations/history` | JWT | Recommendations from view history |
 
-3. **Build and Start the Project**:
-   With Docker Compose, you can easily start all containers:
+Supported genres: Fiction, Non-Fiction, Science, History, Fantasy, Biography, Romance, Thriller, Mystery, Philosophy.
 
-   ```bash
-   docker-compose up --build
-   ```
+## Project structure
 
-   This command will build the images for the containers (if needed) and start them. After this, you will be able to access the project through the browser or API.
+```
+.
+├── src/
+│   ├── main.py              # App factory: routers, rate limiter, DB init
+│   ├── dependencies.py      # Env config (JWT, database URL), logging
+│   ├── db/                  # psycopg2 connection, schema init, SQL queries
+│   ├── routes/              # auth, books, recommendations routers
+│   ├── schemas/             # Pydantic models
+│   └── utils/               # JWT/password helpers, rate limiter
+├── tests/                   # pytest suite (requires PostgreSQL)
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── .env.example
+```
 
-4. **Accessing the Application**:
-   After starting the project, you can access the following URLs (depending on your configuration):
+Tables (`users`, `authors`, `books`, `user_history`) are created automatically on startup if they don't exist.
 
-   - Web API: `http://localhost:8000`
-   - Swagger Documentation: `http://localhost:8000/docs`
+## Getting started
 
-5. **Stopping the Project**:
-   To stop the project, use the command:
+### Configuration
 
-   ```bash
-   docker-compose down
-   ```
+```bash
+cp .env.example .env
+```
 
-   This will stop all containers but will not remove data from the database.
+Set at least `SECRET_KEY`, `DB_PASSWORD` and `TEST_DB_PASSWORD`. All variables:
 
----
+| Variable | Purpose |
+|---|---|
+| `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT signing (e.g. `HS256`) |
+| `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME` | Application database |
+| `TEST_DB_USER`, `TEST_DB_PASSWORD`, `TEST_DB_HOST`, `TEST_DB_PORT`, `TEST_DB_NAME` | Test database used by pytest fixtures |
 
-These are the basic instructions for running your project with Docker Compose.
+### Run with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+This starts the API on `http://localhost:8000`, the main database on port `5432` and the test database on port `5433`. Compose reads the database credentials from `.env`; inside the Compose network the API connects to the `postgres_db` service.
+
+### Run locally
+
+Requires Python 3.12+ and a reachable PostgreSQL instance configured via `DB_*` in `.env` (for example, the `postgres_db` service from Compose: `docker compose up -d postgres_db test_db`).
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn src.main:app --reload
+```
+
+## Running tests
+
+The tests run against real PostgreSQL databases: fixtures in `tests/conftest.py` connect to the `TEST_DB_*` database, while the application code under test uses `DB_*`. Start both databases first, then run pytest from the project root:
+
+```bash
+docker compose up -d postgres_db test_db
+pytest
+```
